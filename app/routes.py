@@ -1,14 +1,40 @@
 from flask import Blueprint, jsonify
-from .model.webinar import get_all_webinars
+from .model_webinar import WebinarModel
 
-# Define the blueprint
-main_bp = Blueprint('main', __name__)
+main = Blueprint("main", __name__)
 
-@main_bp.route('/health')
-def health():
-    return jsonify({"status": "up", "service": "pharmaprofs-backend"}), 200
 
-@main_bp.route('/webinar')
-def webinar_list():
-    data = get_all_webinars()
-    return jsonify(data)
+@main.route("/")
+def home():
+    return jsonify({"message": "App is running"})
+
+
+@main.route("/webinars", methods=["GET"])
+def get_webinars():
+    try:
+        data = WebinarModel.get_all_webinars()
+        return jsonify({
+            "status": "success",
+            "count": len(data),
+            "data": data
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@main.route("/webinar", methods=["GET"])
+def get_one_webinar():
+    try:
+        data = WebinarModel.get_one_webinar()
+        return jsonify({
+            "status": "success",
+            "data": data
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
