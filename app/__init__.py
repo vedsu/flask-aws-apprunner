@@ -1,36 +1,47 @@
-import os
-import json
-import boto3
 from flask import Flask
-from botocore.exceptions import ClientError
+from pymongo import MongoClient
+import boto3
+import json
 
-def get_secrets():
+mongo_client = None
+db = None
+
+
+def get_secret():
     secret_name = "pharmaprofsbackend"
     region_name = "us-east-1"
-    session = boto3.session.Session()
-    client = session.client(service_name='secretsmanager', region_name=region_name)
-    
-    try:
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-        return json.loads(get_secret_value_response['SecretString'])
-    except Exception as e:
-        print(f"Critical Error: Could not fetch secrets. {e}")
-        return {}
 
-def create_app():
-    app = Flask(__name__)
-    
-    # 1. Load Secrets
-    secrets = get_secrets()
-    app.config.update(
-        SQLALCHEMY_DATABASE_URI=secrets.get('CONNECTION_STRING'),
-        # ... your other secrets ...
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
     )
 
-    # 2. Register Blueprints
-    from .routes import main_bp
-    app.register_blueprint(main_bp)
+    response = client.get_secret_value(SecretId=secret_name)
+    secret = response['SecretString']
+
+    return json.loads(secret)
+
+
+def create_app():
+    global mongo_client, db
+
+    app = Flask(__name__)
+
+    # Fetch secret from AWS Secrets Manager
+    secret = get_secret()
+
+    # Extract connection string
+    mongo_uri = secret["CONNECTION_STRING"]
+
+    # Initialize MongoDB
+    mongo_client = MongoClient(mongo_uri)
+
+    # Explicit DB selection (recommended)
+    db = mongo_client["webinarprof"]
+
+    # Register routes
+    from .routes import main
+    app.register_blueprint(main)
 
     return app
-
-app = create_app()
