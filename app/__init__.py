@@ -13,14 +13,13 @@ def get_secret():
 
     session = boto3.session.Session()
     client = session.client(
-        service_name='secretsmanager',
+        service_name="secretsmanager",
         region_name=region_name
     )
 
     response = client.get_secret_value(SecretId=secret_name)
-    secret = response['SecretString']
-
-    return json.loads(secret)
+    secret_string = response["SecretString"]
+    return json.loads(secret_string)
 
 
 def create_app():
@@ -28,19 +27,17 @@ def create_app():
 
     app = Flask(__name__)
 
-    # Fetch secret from AWS Secrets Manager
-    secret = get_secret()
+    try:
+        secret = get_secret()
+        mongo_uri = secret["CONNECTION_STRING"]
+        mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        mongo_client.admin.command("ping")
+        db = mongo_client["webinarprof"]
+        print("MongoDB connected successfully")
+    except Exception as e:
+        print(f"Startup error: {e}")
+        raise
 
-    # Extract connection string
-    mongo_uri = secret["CONNECTION_STRING"]
-
-    # Initialize MongoDB
-    mongo_client = MongoClient(mongo_uri)
-
-    # Explicit DB selection (recommended)
-    db = mongo_client["webinarprof"]
-
-    # Register routes
     from .routes import main
     app.register_blueprint(main)
 
