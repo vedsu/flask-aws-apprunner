@@ -13,6 +13,3 @@ class WebinarModel:
             WebinarModel.get_collection().find({}, {"_id": 0}).limit(limit)
         )
 
-    @staticmethod
-    def get_one_webinar():
-        return WebinarModel.get_collection().find_one({}, {"_id": 0})
