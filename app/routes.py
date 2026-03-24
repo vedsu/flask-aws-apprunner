@@ -25,16 +25,3 @@ def get_webinars():
         }), 500
 
 
-@main.route("/webinar", methods=["GET"])
-def get_one_webinar():
-    try:
-        data = WebinarModel.get_one_webinar()
-        return jsonify({
-            "status": "success",
-            "data": data
-        })
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
