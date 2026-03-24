@@ -30,9 +30,11 @@ def create_app():
     try:
         secret = get_secret()
         mongo_uri = secret["CONNECTION_STRING"]
+
         mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         mongo_client.admin.command("ping")
         db = mongo_client["webinarprof"]
+
         print("MongoDB connected successfully")
     except Exception as e:
         print(f"Startup error: {e}")
