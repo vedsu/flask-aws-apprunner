@@ -10,8 +10,8 @@ def get_all_webinars():
 
     try:
         client = MongoClient(connection_string)
-        # Assuming your database name is 'pharmaprofs'
-        db = client['pharmaprofs'] 
+        # Assuming your database name is 'webinarprof'
+        db = client['webinarprof'] 
         collection = db['webinar_data']
         
         # Fetch data and convert MongoDB cursor to a list
