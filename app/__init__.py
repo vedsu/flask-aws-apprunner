@@ -1,46 +1,57 @@
 from flask import Flask
-from pymongo import MongoClient
+from flask_pymongo import PyMongo
+from flask_cors import CORS
 import boto3
 import json
+import os
+# from dotenv import load_dotenv
 
-mongo_client = None
-db = None
+app = Flask(__name__)
 
+# Access MongoDB Atlas Cluster
+# load_dotenv()
 
-def get_secret():
-    secret_name = "pharmaprofsbackend"
-    region_name = "us-east-1"
-
-    session = boto3.session.Session()
-    client = session.client(
-        service_name="secretsmanager",
-        region_name=region_name
-    )
-
-    response = client.get_secret_value(SecretId=secret_name)
-    secret_string = response["SecretString"]
-    return json.loads(secret_string)
+secret_name = "aws-model"
+region_name = 'us-east-1'
 
 
-def create_app():
-    global mongo_client, db
-
-    app = Flask(__name__)
-
+def get_secret(secret_name, region_name):
+    
     try:
-        secret = get_secret()
-        mongo_uri = secret["CONNECTION_STRING"]
 
-        mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-        mongo_client.admin.command("ping")
-        db = mongo_client["webinarprof"]
+        session = boto3.session.Session()
+        client = session.client(
+            service_name = "secret_manager",
+            region_name = region_name
+        )
 
-        print("MongoDB connected successfully")
+        response = client.get_secret_value(SecretId = secret_name)
+        secret_string = response["SecretString"]
+        return json.loads(secret_string)
+    
     except Exception as e:
-        print(f"Startup error: {e}")
-        raise
+        print(f"Error retrieving secret : {e}")
+        return {}
 
-    from .routes import main
-    app.register_blueprint(main)
+secret_data = get_secret(secret_name, region_name)
 
-    return app
+app.config["MONGO_URI"] = secret_data["MONGODB_BW"]
+
+mongo = PyMongo(app)
+
+cors = CORS(app)
+
+s3_resource = boto3.resource(
+    service_name = "s3",
+    region_name = 'us-east-1',
+    aws_access_key_id = access_id,
+    aws_secret_access_key = access_key
+
+)
+s3_client = boto3.client(
+    service_name = "s3",
+    region_name = 'us-east-1',
+    aws_access_key_id = access_id,
+    aws_secret_access_key = access_key)
+
+from app import routes
